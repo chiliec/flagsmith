@@ -1,4 +1,5 @@
-import { FC, useMemo, useRef } from 'react'
+import { FC, useEffect, useMemo, useRef } from 'react'
+import cn from 'classnames'
 import moment from 'moment'
 import { ChangeRequestSummary } from 'common/types/responses'
 import { useGetChangeRequestsQuery } from 'common/services/useChangeRequest'
@@ -6,12 +7,15 @@ import { useGetChangeRequestIdsStagingQuery } from 'common/services/useFeatureDe
 import Chip from 'components/base/Chip'
 import ErrorMessage from 'components/ErrorMessage'
 import ChangeRequestDependencyChanges from 'components/ChangeRequestDependencyChanges'
-import DependenciesPanel from './DependenciesPanel'
+import DependenciesPanel from 'components/modals/create-feature/tabs/FeatureDependenciesTab/DependenciesPanel'
+import './PendingChangeRequests.scss'
 
 type PendingChangeRequestsProps = {
   environmentId: string
   featureId: number
   projectId: number
+  // The change request just created, flashed and scrolled to on arrival.
+  highlightId?: number
 }
 
 // Changes to this feature's prerequisites that are waiting in open or
@@ -19,9 +23,11 @@ type PendingChangeRequestsProps = {
 const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
   environmentId,
   featureId,
+  highlightId,
   projectId,
 }) => {
   const now = useRef(new Date().toISOString())
+  const highlightRef = useRef<HTMLDivElement>(null)
   const { data: changeRequestIds } = useGetChangeRequestIdsStagingQuery({
     featureId,
   })
@@ -44,6 +50,20 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
     return live.filter((cr) => changeRequestIds?.includes(cr.id))
   }, [changeRequestIds, open, scheduled])
 
+  const hasHighlight = groups.some(
+    (changeRequest) => changeRequest.id === highlightId,
+  )
+  useEffect(() => {
+    if (!hasHighlight) return
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    highlightRef.current?.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'nearest',
+    })
+  }, [hasHighlight])
+
   // Without the change request lists, staged changes cannot be matched to
   // one, and hiding them would read as nothing pending.
   if (changeRequestIds?.length && (isOpenError || isScheduledError)) {
@@ -62,22 +82,30 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
       </p>
       <div className='d-flex flex-column gap-3'>
         {groups.map((changeRequest) => (
-          <DependenciesPanel key={changeRequest.id}>
-            <div className='d-flex align-items-center gap-2 px-3 py-2'>
-              <a
-                className='fw-semibold me-auto text-truncate'
-                href={`/project/${projectId}/environment/${environmentId}/change-requests/${changeRequest.id}`}
-              >
-                #{changeRequest.id} {changeRequest.title}
-              </a>
-              <Chip size='xs'>{describeStatus(changeRequest)}</Chip>
-            </div>
-            <ChangeRequestDependencyChanges
-              environmentId={environmentId}
-              featureId={featureId}
-              changeRequestId={changeRequest.id}
-            />
-          </DependenciesPanel>
+          <div
+            key={changeRequest.id}
+            ref={changeRequest.id === highlightId ? highlightRef : undefined}
+            className={cn({
+              'pending-change-request--flash': changeRequest.id === highlightId,
+            })}
+          >
+            <DependenciesPanel>
+              <div className='d-flex align-items-center gap-2 px-3 py-2'>
+                <a
+                  className='fw-semibold me-auto text-truncate'
+                  href={`/project/${projectId}/environment/${environmentId}/change-requests/${changeRequest.id}`}
+                >
+                  #{changeRequest.id} {changeRequest.title}
+                </a>
+                <Chip size='xs'>{describeStatus(changeRequest)}</Chip>
+              </div>
+              <ChangeRequestDependencyChanges
+                environmentId={environmentId}
+                featureId={featureId}
+                changeRequestId={changeRequest.id}
+              />
+            </DependenciesPanel>
+          </div>
         ))}
       </div>
     </div>
