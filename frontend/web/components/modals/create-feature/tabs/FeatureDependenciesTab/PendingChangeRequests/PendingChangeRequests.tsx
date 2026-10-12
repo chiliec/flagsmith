@@ -7,6 +7,8 @@ import { useGetChangeRequestIdsStagingQuery } from 'common/services/useFeatureDe
 import Accordion from 'components/base/Accordion'
 import ChangeRequestLink from 'components/modals/create-feature/tabs/FeatureDependenciesTab/ChangeRequestLink'
 import Chip from 'components/base/Chip'
+import Icon from 'components/icons/Icon'
+import { colorIconSecondary } from 'common/theme/tokens'
 import ErrorMessage from 'components/ErrorMessage'
 import ChangeRequestDependencyChanges from 'components/ChangeRequestDependencyChanges'
 import './PendingChangeRequests.scss'
@@ -15,6 +17,7 @@ type PendingChangeRequestsProps = {
   environmentId: string
   featureId: number
   projectId: number
+  isEnabled: (featureId: number) => boolean
   // The change request just created, flashed and scrolled to on arrival.
   highlightId?: number
 }
@@ -25,6 +28,7 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
   environmentId,
   featureId,
   highlightId,
+  isEnabled,
   projectId,
 }) => {
   const now = useRef(new Date().toISOString())
@@ -93,13 +97,24 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
             <Accordion
               defaultOpen
               flush
-              title={`#${changeRequest.id} ${changeRequest.title}`}
-              meta={<Chip size='xs'>{describeStatus(changeRequest)}</Chip>}
+              title={
+                <span className='d-inline-flex align-items-center gap-2'>
+                  <Icon
+                    name='request'
+                    width={16}
+                    fill={colorIconSecondary}
+                    aria-hidden
+                  />
+                  #{changeRequest.id} {changeRequest.title}
+                </span>
+              }
+              meta={<StatusChip changeRequest={changeRequest} />}
             >
               <ChangeRequestDependencyChanges
                 environmentId={environmentId}
                 featureId={featureId}
                 changeRequestId={changeRequest.id}
+                isEnabled={isEnabled}
               />
               {/* In the body, as the header is the toggle and a link cannot
                   sit inside a button. */}
@@ -120,9 +135,18 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
   )
 }
 
-const describeStatus = (changeRequest: ChangeRequestSummary) =>
-  changeRequest.committed_at && changeRequest.live_from
-    ? `Scheduled for ${moment(changeRequest.live_from).format('D MMM, HH:mm')}`
-    : 'Awaiting approval'
+// Waiting on people reads as a warning; a scheduled change only needs time.
+const StatusChip: FC<{ changeRequest: ChangeRequestSummary }> = ({
+  changeRequest,
+}) =>
+  changeRequest.committed_at && changeRequest.live_from ? (
+    <Chip size='xs'>
+      Scheduled for {moment(changeRequest.live_from).format('D MMM, HH:mm')}
+    </Chip>
+  ) : (
+    <Chip size='xs' variant='warning'>
+      Awaiting approval
+    </Chip>
+  )
 
 export default PendingChangeRequests
