@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { useGetFeatureIdsStagedQuery } from 'common/services/useFeatureDependency'
 import { useGetProjectFlagQuery } from 'common/services/useProjectFlag'
+import { useFeatureStates } from 'common/hooks/useFeatureStates'
 import ChangeRequestDependencyChanges from 'components/ChangeRequestDependencyChanges'
 import Panel from 'components/base/grid/Panel'
 
@@ -17,6 +18,9 @@ const FeatureDependencyChanges: FC<
     id: featureId,
     project: Number(projectId),
   })
+  // Whether each prerequisite is on now, so a reviewer can see an added one
+  // that would hold this feature off.
+  const states = useFeatureStates(Number(projectId), environmentId)
   return (
     <Panel
       title={`Dependencies${feature ? `: ${feature.name}` : ''}`}
@@ -30,6 +34,10 @@ const FeatureDependencyChanges: FC<
         environmentId={environmentId}
         featureId={featureId}
         changeRequestId={changeRequestId}
+        // Until the states are known, no column rather than every row "Disabled".
+        isEnabled={
+          states.isLoading || states.isError ? undefined : states.isEnabled
+        }
       />
     </Panel>
   )
