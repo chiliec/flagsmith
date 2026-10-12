@@ -1,7 +1,9 @@
-import React, { FC, useEffect } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import { useScript } from 'common/hooks/useScript'
 import AccountStore from 'common/stores/account-store'
 import { AccountModel } from 'common/types/responses'
+import { useTheme } from 'project/darkMode'
+import { applyFormTheme } from './hubspotFormTheme'
 import {
   CONTACT_SALES_FORM,
   CONTACT_SALES_URL,
@@ -26,10 +28,9 @@ const TARGET_ID = 'contact-sales-form'
 
 // The form renders in an iframe, so set values the way HubSpot documents:
 // assign, then fire an input event so the form registers them.
-const prefill = (arg: HubSpotFormArg) => {
-  const form = 'jquery' in arg ? arg[0] : arg
+const prefill = (form: HTMLFormElement) => {
   const user = AccountStore.getUser() as AccountModel | undefined
-  if (!form || !user) return
+  if (!user) return
   const values: Record<string, string | undefined> = {
     email: user.email,
     firstname: user.first_name,
@@ -45,16 +46,27 @@ const prefill = (arg: HubSpotFormArg) => {
 
 const ContactSalesForm: FC = () => {
   const { error, ready } = useScript(HUBSPOT_FORMS_SCRIPT_URL)
+  const { isDark } = useTheme()
+  const [form, setForm] = useState<HTMLFormElement | null>(null)
 
   useEffect(() => {
     if (ready && window.hbspt) {
       window.hbspt.forms.create({
         ...CONTACT_SALES_FORM,
-        onFormReady: prefill,
+        onFormReady: (arg) => {
+          const element = 'jquery' in arg ? arg[0] : arg
+          if (!element) return
+          prefill(element)
+          setForm(element)
+        },
         target: `#${TARGET_ID}`,
       })
     }
   }, [ready])
+
+  useEffect(() => {
+    if (form) applyFormTheme(form)
+  }, [form, isDark])
 
   // Ad blockers commonly block HubSpot, so always leave a way through.
   if (error || (ready && !window.hbspt)) {
@@ -69,13 +81,9 @@ const ContactSalesForm: FC = () => {
     )
   }
 
-  // HubSpot styles the form itself (dark labels), so it sits on a white
-  // card to stay readable in dark mode.
   return (
     <div className='p-4'>
-      <div className='bg-white rounded p-3'>
-        <div id={TARGET_ID} />
-      </div>
+      <div id={TARGET_ID} />
     </div>
   )
 }
