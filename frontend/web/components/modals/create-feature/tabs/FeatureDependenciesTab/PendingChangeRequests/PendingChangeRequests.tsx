@@ -98,20 +98,19 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
               defaultOpen
               flush
               title={
-                <span className='d-flex align-items-center justify-content-between gap-2'>
-                  <span className='d-inline-flex align-items-center gap-2'>
-                    <Icon
-                      name='request'
-                      width={16}
-                      fill={colorIconSecondary}
-                      aria-hidden
-                    />
-                    #{changeRequest.id} {changeRequest.title}
-                  </span>
-                  <span className='flex-shrink-0'>
-                    <StatusChip changeRequest={changeRequest} />
-                  </span>
-                </span>
+                <>
+                  <Icon
+                    name='request'
+                    width={16}
+                    fill={colorIconSecondary}
+                    aria-hidden
+                  />
+                  #{changeRequest.id} {changeRequest.title}
+                  <StatusChip
+                    className='ms-auto flex-shrink-0'
+                    changeRequest={changeRequest}
+                  />
+                </>
               }
             >
               <ChangeRequestDependencyChanges
@@ -140,15 +139,16 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
 }
 
 // Waiting on people reads as a warning; a scheduled change only needs time.
-const StatusChip: FC<{ changeRequest: ChangeRequestSummary }> = ({
-  changeRequest,
-}) =>
+const StatusChip: FC<{
+  changeRequest: ChangeRequestSummary
+  className?: string
+}> = ({ changeRequest, className }) =>
   changeRequest.committed_at && changeRequest.live_from ? (
-    <Chip size='xs'>
+    <Chip className={className} size='xs'>
       Scheduled for {moment(changeRequest.live_from).format('D MMM, HH:mm')}
     </Chip>
   ) : (
-    <Chip size='xs' variant='warning'>
+    <Chip className={className} size='xs' variant='warning'>
       Awaiting approval
     </Chip>
   )
