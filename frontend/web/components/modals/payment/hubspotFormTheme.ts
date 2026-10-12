@@ -45,8 +45,10 @@ body { background: transparent !important; }
 `
 
 // Run again on a theme change: the copied values don't follow the page.
-export const applyFormTheme = (form: HTMLFormElement) => {
+export const applyFormTheme = (form: HTMLFormElement, isDark: boolean) => {
   const doc = form.ownerDocument
+  // Native controls (the country select) ignore our colours otherwise.
+  doc.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
   if (!doc.getElementById(STYLE_ID)) {
     const style = doc.createElement('style')
     style.id = STYLE_ID

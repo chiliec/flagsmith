@@ -65,7 +65,7 @@ const ContactSalesForm: FC = () => {
   }, [ready])
 
   useEffect(() => {
-    if (form) applyFormTheme(form)
+    if (form) applyFormTheme(form, isDark)
   }, [form, isDark])
 
   // Ad blockers commonly block HubSpot, so always leave a way through.
