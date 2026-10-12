@@ -98,17 +98,21 @@ const PendingChangeRequests: FC<PendingChangeRequestsProps> = ({
               defaultOpen
               flush
               title={
-                <span className='d-inline-flex align-items-center gap-2'>
-                  <Icon
-                    name='request'
-                    width={16}
-                    fill={colorIconSecondary}
-                    aria-hidden
-                  />
-                  #{changeRequest.id} {changeRequest.title}
+                <span className='d-flex align-items-center justify-content-between gap-2'>
+                  <span className='d-inline-flex align-items-center gap-2'>
+                    <Icon
+                      name='request'
+                      width={16}
+                      fill={colorIconSecondary}
+                      aria-hidden
+                    />
+                    #{changeRequest.id} {changeRequest.title}
+                  </span>
+                  <span className='flex-shrink-0'>
+                    <StatusChip changeRequest={changeRequest} />
+                  </span>
                 </span>
               }
-              meta={<StatusChip changeRequest={changeRequest} />}
             >
               <ChangeRequestDependencyChanges
                 environmentId={environmentId}
